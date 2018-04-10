@@ -146,6 +146,7 @@
         if (this.fixedTop === fixedTop) {
           return
         }
+        this.fixedTop = fixedTop
         this.$refs.fixed.style.transform = `translate3d(0,${fixedTop}px,0)`
       }
     }
