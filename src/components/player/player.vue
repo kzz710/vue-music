@@ -30,17 +30,24 @@
           </div>
         </div>
         <div class="bottom">
+          <div class="progress-wrapper">
+            <span class="time time-l">{{formatTime(currentTime)}}</span>
+            <div class="progress-bar-wrapper">
+              <progress-bar-component @percentChange="onProgressBarChange" :percent="percent"></progress-bar-component>
+            </div>
+            <span class="time time-r">{{formatTime(currentSong.duration)}}</span>
+          </div>
           <div class="operators">
             <div class="icon i-left">
-              <i></i>
+              <i :class="iconMode" @click="changeMode"></i>
             </div>
-            <div class="icon i-left">
+            <div class="icon i-left" :class="disableCls">
               <i class="icon-prev" @click="prev"></i>
             </div>
-            <div class="icon i-center">
+            <div class="icon i-center" :class="disableCls">
               <i @click="togglePlaying" :class="playIcon"></i>
             </div>
-            <div class="icon i-right">
+            <div class="icon i-right" :class="disableCls">
               <i class="icon-next" @click="next"></i>
             </div>
             <div class="icon i-right">
@@ -59,15 +66,17 @@
           <h2 class="name" v-html="currentSong.name"></h2>
           <p class="desc" v-html="currentSong.singer"></p>
         </div>
-        <div class="control" @click.stop="togglePlaying">
-          <i :class="miniIcon"></i>
+        <div class="control">
+          <progress-circle-component :radius="radius" :percent="percent">
+            <i :class="miniIcon" @click.stop="togglePlaying" class="icon-mini"></i>
+          </progress-circle-component>
         </div>
         <div class="control">
           <i class="icon-playlist"></i>
         </div>
       </div>
     </transition>
-    <audio :src="currentSong.url" ref="audio" @canplay="ready" @error="error"></audio>
+    <audio @timeupdate="updateTime" :src="currentSong.url" ref="audio" @canplay="ready" @error="error"></audio>
   </div>
 </template>
 
@@ -75,6 +84,9 @@
   import {mapGetters, mapMutations} from 'vuex'
   import animations from 'create-keyframe-animation'
   import {prefixStyle} from 'common/js/dom'
+  import ProgressBarComponent from 'base/progress-bar/progress-bar'
+  import ProgressCircleComponent from 'base/progress-circle/progress-circle'
+  import {playMode} from 'common/js/config'
 
   const transform = prefixStyle('transform')
 
@@ -82,8 +94,14 @@
     name: 'player',
     data() {
       return {
-        songReady: false
+        songReady: false,
+        currentTime: 0,
+        radius: 32
       }
+    },
+    components: {
+      ProgressBarComponent,
+      ProgressCircleComponent
     },
     computed: {
       playIcon() {
@@ -92,15 +110,25 @@
       miniIcon() {
         return this.playing ? 'icon-pause-mini' : 'icon-play-mini'
       },
+      iconMode() {
+        return this.mode === playMode.sequence ? 'icon-sequence' : this.mode === playMode.loop ? 'icon-loop' : 'icon-random'
+      },
       cdCls() {
         return this.playing ? 'play' : 'play pause'
+      },
+      disableCls() {
+        return this.songReady ? '' : 'disable'
+      },
+      percent() {
+        return this.currentTime / this.currentSong.duration
       },
       ...mapGetters([
         'playList',
         'fullScreen',
         'currentSong',
         'playing',
-        'currentIndex'
+        'currentIndex',
+        'mode'
       ])
     },
     methods: {
@@ -134,10 +162,22 @@
         this.songReady = true
       },
       error() {
+        this.songReady = true
       },
       togglePlaying() {
         this.playing ? this.$refs.audio.pause() : this.$refs.audio.play()
         this.setPlayingState(!this.playing)
+      },
+      updateTime(e) {
+        this.currentTime = e.target.currentTime
+      },
+      changeMode() {
+        const mode = (this.mode + 1) % 3
+      },
+      onProgressBarChange(percent) {
+        this.$refs.audio.currentTime = this.currentSong.duration * percent
+        this.setPlayingState(true)
+        this.$refs.audio.play()
       },
       enter(el, done) {
         const {x, y, scale} = this._getPosAndScale()
@@ -193,6 +233,18 @@
           y,
           scale
         }
+      },
+      formatTime(interval) {
+        interval = interval | 0
+        let minute = interval / 60 | 0
+        let second = interval % 60
+        if (minute < 10) {
+          minute = '0' + minute
+        }
+        if (second < 10) {
+          second = '0' + second
+        }
+        return `${minute}:${second}`
       },
       ...mapMutations({
         setFullScreen: 'SET_FULL_SCREEN',
@@ -362,6 +414,29 @@
               border-radius 5px
               background: $color-text-ll
             }
+          }
+        }
+        .progress-wrapper {
+          display flex
+          align-items center
+          width: 80%
+          margin 0 auto
+          padding 10px 0
+          .time {
+            color: $color-text
+            font-size $font-size-small
+            flex 0 0 30px
+            line-height: 30px
+            width: 30px
+            &.time-l {
+              text-align left
+            }
+            &.timer-r {
+              text-align right
+            }
+          }
+          .progress-bar-wrapper {
+            flex 1
           }
         }
         .operators {
