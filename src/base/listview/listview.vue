@@ -95,6 +95,9 @@
         let anchorIndex = parseInt(this.touch.anchorIndex + delta)
         this._scrollTo(anchorIndex)
       },
+      refresh() {
+        this.$refs.scroll.refresh()
+      },
       scroll(pos) {
         this.scrollY = Math.abs(pos.y)
         this.scrollYSame = pos.y
