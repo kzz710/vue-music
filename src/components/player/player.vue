@@ -254,7 +254,7 @@
           this.currentLineNum = 0
         })
       },
-      handleLyric(lineNum, txt) {
+      handleLyric({lineNum, txt}) {
         this.currentLineNum = lineNum
         if (lineNum > 5) {
           let lineEl = this.$refs.lyricLine[lineNum - 5]
