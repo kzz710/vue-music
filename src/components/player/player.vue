@@ -335,6 +335,7 @@
         this.$refs.middleL.style[transitionDuration] = 0
       },
       middleTouchEnd() {
+        this.touch.initiated = false
         let offsetWidth
         let opacity
         if (this.currentShow === 'cd') {
